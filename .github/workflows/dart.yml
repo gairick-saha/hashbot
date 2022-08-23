@@ -1,0 +1,38 @@
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+name: "Build & Release"
+jobs:
+  build:
+    name: Build & Release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/setup-java@v1
+        with:
+          java-version: "12.x"
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.0.5"
+          channel: "stable"
+      - run: flutter clean
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - run: |
+          flutter build ios --release
+          cd build/ios/iphoneos
+          mkdir Payload
+          cd Payload
+          ln -s ../Runner.app
+          cd ..
+          zip -r app.ipa Payload
+      - name: Push to Releases
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/app/outputs/flutter-apk/app-production-release.apk,build/ios/iphoneos/app.ipa"
+          tag: v1.0.${{ github.run_number }}
+          token: "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"
